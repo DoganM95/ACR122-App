@@ -4,23 +4,29 @@ FROM node:22
 WORKDIR /usr/src/app
 
 # Install packages
-RUN apt update 
-RUN apt install -y \
+RUN apt update && apt install -y \
     libccid \
     libpcsclite-dev \
     libpcsclite1 \
     pcsc-tools \
     pcscd \
-    usbutils
+    udev \
+    usbutils 
 
 # Install npm dependencies
 COPY package*.json ./
 RUN npm install
 
-# Copy more stuff
+# Copy application files
 COPY ./index.js ./
 COPY ./keylist.keys ./
 COPY ./entrypoint.sh ./
+
+# Create blacklist
+RUN mkdir -p /etc/modprobe.d/
+RUN touch /etc/modprobe.d/blacklist.conf
+RUN echo install nfc /bin/false > /etc/modprobe.d/blacklist.conf
+RUN echo install pn533 /bin/false >> /etc/modprobe.d/blacklist.conf
 
 # Fix permissions
 RUN chmod +x ./entrypoint.sh
