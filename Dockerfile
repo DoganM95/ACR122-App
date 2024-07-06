@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 
 # Install packages
 RUN apt update 
-RUN apt install -y pcscd libpcsclite1 libpcsclite-dev usbutils pcsc-tools
+RUN apt install -y pcscd libpcsclite1 libpcsclite-dev usbutils pcsc-tools pcsc-ccid
 
 # Install npm dependencies
 COPY package*.json ./
