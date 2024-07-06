@@ -25,7 +25,7 @@ COPY ./entrypoint.sh ./
 RUN chmod +x ./entrypoint.sh
 
 # Expose the port the app runs on
-EXPOSE 8080
+EXPOSE 3000
 
 # Set the entrypoint to the script
 ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
