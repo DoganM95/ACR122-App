@@ -1,8 +1,14 @@
 #!/bin/bash
-set -e
 
-# Start the PCSC daemon
-/etc/init.d/pcscd start
+# Start pcscd in the background
+/usr/sbin/pcscd --debug --foreground &
 
-# Run the main application
+# Give pcscd some time to start
+sleep 2
+
+# Debugging: List USB devices and check pcscd status
+lsusb
+ps aux | grep pcscd
+
+# Start the Node.js application
 exec "$@"
