@@ -1,22 +1,28 @@
-# Use an official Node.js runtime as a parent image
-FROM node:alpine
+FROM node:22
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /usr/src/app
 
-# Install pcscd and libpcsclite1
+# Install packages
 RUN apt update 
 RUN apt install -y pcscd libpcsclite1 libpcsclite-dev
 
-# Install Node.js dependencies
+# Install npm dependencies
 COPY package*.json ./
 RUN npm install
 
 # Copy more stuff
 COPY ./index.js ./
+COPY ./entrypoint.sh ./
+
+# Fix permissions
+RUN chmod +x ./entrypoint.sh
 
 # Expose the port the app runs on
 EXPOSE 8080
+
+# Set the entrypoint to the script
+ENTRYPOINT ["/usr/src/app/entrypoint.sh"]
 
 # Command to run the app
 CMD ["node", "index.js"]
