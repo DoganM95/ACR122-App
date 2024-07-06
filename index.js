@@ -21,6 +21,24 @@ let cardInfo = {
     firmwareVersion: null,
     piccOperatingParameters: null,
     readerStatus: null,
+    cardName: null,
+};
+
+// Mapping of ATRs to card names, explained byte by byte, see page 8
+// Byte 0: Initial header
+// Byte 1: T0
+// Byte 2: TD1
+// Byte 3: TD2
+// Byte 4 to 3+N: T1, Tk, RFU
+// Byte 4+N: TCK
+const atrMapping = {
+    "3b8f8001804f0ca000000306030001000000006a": "MIFARE Classic 1K",
+    "3b8f8001804f0ca000000306030002000000006b": "MIFARE Classic 4K",
+    "3b8f8001804f0ca000000306030003000000006b": "MIFARE Ultralight",
+    "3b8f8001804f0ca000000306030026000000006b": "MIFARE Mini",
+    "3b8f8001804f0ca00000030603F004000000006b": "Topaz and Jewel",
+    "3b8f8001804f0ca00000030603F011000000006b": "FeliCa 212K",
+    "3b8f8001804f0ca00000030603F012000000006b": "FeliCa 424K",
 };
 
 const keys = [];
@@ -62,11 +80,14 @@ pcsc.on("reader", async (reader) => {
                     .then((protocol) => (protocolReturned = protocol))
                     .catch((err) => console.error("Failed to retrieve the protocol." + err));
                 try {
+                    cardInfo.atr = status.atr.toString("hex");
+                    console.log("Card ATR:", cardInfo.atr);
+
+                    cardInfo.cardName = atrMapping[cardInfo.atr.toLowerCase()] || "Unknown card model";
+                    console.log("Card Name:", cardInfo.cardName);
+
                     cardInfo.uid = (await transmit(reader, protocolReturned, GET_UID)).toString("hex");
                     console.log("Card UID:", cardInfo.uid);
-
-                    cardInfo.atr = (await transmit(reader, protocolReturned, GET_ATR)).toString("hex");
-                    console.log("Card ATR:", cardInfo.atr);
 
                     cardInfo.firmwareVersion = (await transmit(reader, protocolReturned, GET_FIRMWARE_VERSION)).toString("hex");
                     console.log("Firmware Version:", cardInfo.firmwareVersion);
@@ -151,7 +172,7 @@ const authenticate = async (reader, protocol, sector) => {
 
 const readAllSectors = async (reader, protocol) => {
     let sector = 0;
-    const maxSectors = 64; // upper limit for testing
+    const maxSectors = 64;
     while (sector < maxSectors) {
         try {
             const key = await authenticate(reader, protocol, sector);
