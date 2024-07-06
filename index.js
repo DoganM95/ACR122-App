@@ -1,4 +1,4 @@
-const pcsclite = require("pcsclite");
+const pcsclite = require("pcsclite"); // https://www.npmjs.com/package/pcsclite
 const fs = require("fs");
 const path = require("path");
 const pcsc = pcsclite();
