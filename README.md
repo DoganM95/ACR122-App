@@ -53,3 +53,10 @@ docker run \
   --restart always \
   ghcr.io/doganm95/acr122u-js:latest
 ```
+
+# Keys
+
+To authorize the reading device on a card, the correct key needs to be used. The common approach is to do a dictionary attack, where a list of kinda known keys is iterated over, until authorization succeeds. The lists used in this repo are from Mifare Classic Tool and all credit for the keys goes to them.
+
+- [std.keys](https://github.com/ikarus23/MifareClassicTool/blob/master/Mifare%20Classic%20Tool/app/src/main/assets/key-files/std.keys)
+- [extended-std.keys](https://github.com/ikarus23/MifareClassicTool/blob/master/Mifare%20Classic%20Tool/app/src/main/assets/key-files/extended-std.keys)
