@@ -7,14 +7,14 @@ RUN apt update && apt install -y nodejs npm
 WORKDIR /usr/src/app
 
 # Install packages
-RUN apt install -y \
+RUN apt update && apt install -y \
     libccid \
     libpcsclite-dev \
     libpcsclite1 \
     pcsc-tools \
     pcscd \
     udev \
-    usbutils 
+    usbutils
 
 # Install npm dependencies
 COPY package*.json ./
