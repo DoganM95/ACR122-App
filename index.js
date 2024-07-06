@@ -10,15 +10,15 @@ const GET_PICC_OPERATING_PARAMETERS = Buffer.from([0xff, 0x00, 0x50, 0x00, 0x00]
 const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]);
 
-const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]);
+const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 16]); // Command to read block
 
 const DEFAULT_KEYS = [
-    Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), // Default key
-    Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5]), // Key A
-    Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5]), // Key B
-    Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0x4d, 0x3a, 0x99, 0xc3, 0x51, 0xdd]), // Transport key
-    Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0x1a, 0x98, 0x2c, 0x7e, 0x45, 0x9d]), // Custom key 1
-    Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]), // Custom key 2
+    Buffer.from([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]), // Default factory key
+    Buffer.from([0xa0, 0xa1, 0xa2, 0xa3, 0xa4, 0xa5]), // Key A for testing
+    Buffer.from([0xb0, 0xb1, 0xb2, 0xb3, 0xb4, 0xb5]), // Key B for testing
+    Buffer.from([0x4d, 0x3a, 0x99, 0xc3, 0x51, 0xdd]), // Transport configuration key
+    Buffer.from([0x1a, 0x98, 0x2c, 0x7e, 0x45, 0x9d]), // Custom key example 1
+    Buffer.from([0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff]), // Custom key example 2
 ];
 
 let cardInfo = {
@@ -126,24 +126,25 @@ const transmit = async (reader, protocol, command) => {
     });
 };
 
-const authenticate = async (reader, protocol, sector, key) => {
-    const command = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, sector * 4, 0x60, 0x00]), key]);
-    return transmit(reader, protocol, command);
+const authenticate = async (reader, protocol, sector) => {
+    const block = sector * 4;
+    for (let key of DEFAULT_KEYS) {
+        const command = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, block, 0x60, 0x00]), key]);
+        try {
+            await transmit(reader, protocol, command);
+            console.log(`Authenticated sector ${sector} with key ${key.toString("hex")}`);
+            return true;
+        } catch (err) {
+            console.error(`Authentication failed for sector ${sector} with key ${key.toString("hex")}:`, err.message);
+        }
+    }
+    return false;
 };
 
 const readAllSectors = async (reader, protocol) => {
     let sector = 0;
     while (true) {
-        let authenticated = false;
-        for (let key of DEFAULT_KEYS) {
-            try {
-                await authenticate(reader, protocol, sector, key);
-                authenticated = true;
-                break;
-            } catch (err) {
-                console.error(`Authentication failed for sector ${sector} with key ${key.toString("hex")}:`, err.message);
-            }
-        }
+        const authenticated = await authenticate(reader, protocol, sector);
         if (!authenticated) {
             console.error(`Failed to authenticate sector ${sector}`);
             break;
@@ -151,7 +152,7 @@ const readAllSectors = async (reader, protocol) => {
 
         for (let block = sector * 4; block < sector * 4 + 4; block++) {
             try {
-                const command = READ_SECTOR(block);
+                const command = READ_BLOCK(block);
                 const data = await transmit(reader, protocol, command);
                 cardInfo.sectors[`block${block}`] = data.toString("hex");
                 console.log(`Block ${block} data:`, data.toString("hex"));
