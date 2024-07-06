@@ -10,7 +10,10 @@ const GET_PICC_OPERATING_PARAMETERS = Buffer.from([0xff, 0x00, 0x50, 0x00, 0x00]
 const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]);
 
-const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
+const AUTHENTICATE = (sector) => Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, sector * 4, 0x60, 0x00]);
+const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 0x10]);
+
+const DEFAULT_KEY = Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
 
 let cardInfo = {
     uid: null,
@@ -121,10 +124,15 @@ const readAllSectors = async (reader, protocol) => {
     let sector = 0;
     while (true) {
         try {
-            const command = READ_SECTOR(sector);
-            const data = await transmit(reader, protocol, command);
-            cardInfo.sectors[`sector${sector}`] = data.toString("hex");
-            console.log(`Sector ${sector} data:`, data.toString("hex"));
+            await transmit(reader, protocol, DEFAULT_KEY);
+            await transmit(reader, protocol, AUTHENTICATE(sector));
+
+            for (let block = sector * 4; block < sector * 4 + 4; block++) {
+                const command = READ_BLOCK(block);
+                const data = await transmit(reader, protocol, command);
+                cardInfo.sectors[`block${block}`] = data.toString("hex");
+                console.log(`Block ${block} data:`, data.toString("hex"));
+            }
             sector++;
         } catch (err) {
             if (err.message.includes("SW1/SW2")) {
