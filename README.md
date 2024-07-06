@@ -45,8 +45,8 @@ The privileges it gets need to be tested to see if they are really necessary.
 docker run \
   --cap-add=SYS_ADMIN \
   --cap-add=MKNOD \
+  -d \
   --device /dev/bus/usb \
-  -it \
   --name acr \
   --privileged \
   --pull always \
