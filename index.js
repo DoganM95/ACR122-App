@@ -62,22 +62,22 @@ pcsc.on("reader", async (reader) => {
                     .then((protocol) => (protocolReturned = protocol))
                     .catch((err) => console.error("Failed to retrieve the protocol." + err));
                 try {
-                    cardInfo.uid = (await transmit(reader, protocol, GET_UID)).toString("hex");
+                    cardInfo.uid = (await transmit(reader, protocolReturned, GET_UID)).toString("hex");
                     console.log("Card UID:", cardInfo.uid);
 
-                    cardInfo.atr = (await transmit(reader, protocol, GET_ATR)).toString("hex");
+                    cardInfo.atr = (await transmit(reader, protocolReturned, GET_ATR)).toString("hex");
                     console.log("Card ATR:", cardInfo.atr);
 
-                    cardInfo.firmwareVersion = (await transmit(reader, protocol, GET_FIRMWARE_VERSION)).toString("hex");
+                    cardInfo.firmwareVersion = (await transmit(reader, protocolReturned, GET_FIRMWARE_VERSION)).toString("hex");
                     console.log("Firmware Version:", cardInfo.firmwareVersion);
 
-                    cardInfo.piccOperatingParameters = (await transmit(reader, protocol, GET_PICC_OPERATING_PARAMETERS)).toString("hex");
+                    cardInfo.piccOperatingParameters = (await transmit(reader, protocolReturned, GET_PICC_OPERATING_PARAMETERS)).toString("hex");
                     console.log("PICC Operating Parameters:", cardInfo.piccOperatingParameters);
 
-                    cardInfo.readerStatus = (await transmit(reader, protocol, GET_READER_STATUS)).toString("hex");
+                    cardInfo.readerStatus = (await transmit(reader, protocolReturned, GET_READER_STATUS)).toString("hex");
                     console.log("Reader Status:", cardInfo.readerStatus);
 
-                    await readAllSectors(reader, protocol);
+                    await readAllSectors(reader, protocolReturned);
                 } catch (err) {
                     console.error("Error reading card info:", err);
                 } finally {
