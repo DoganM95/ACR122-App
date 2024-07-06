@@ -151,13 +151,19 @@ const authenticate = async (reader, protocol, sector) => {
 
 const readAllSectors = async (reader, protocol) => {
     let sector = 0;
-    while (true) {
+    const maxSectors = 64; // upper limit for testing
+    while (sector < maxSectors) {
         try {
             const key = await authenticate(reader, protocol, sector);
             const command = READ_SECTOR(sector);
             const data = await transmit(reader, protocol, command);
-            cardInfo.sectors[`sector${sector}`] = data.toString("hex");
-            console.log(`Sector ${sector} data:`, data.toString("hex"));
+            if (data.length === 16 && data.toString("hex")) {
+                cardInfo.sectors[`sector${sector}`] = data.toString("hex");
+                console.log(`Sector ${sector} data:`, data.toString("hex"));
+            } else {
+                console.log(`Sector ${sector} is empty or invalid`);
+                break;
+            }
             sector++;
         } catch (err) {
             console.error(`Error reading sector ${sector}:`, err.message);
