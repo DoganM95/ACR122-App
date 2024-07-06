@@ -81,7 +81,10 @@ pcsc.on("reader", async (reader) => {
                     .catch((err) => console.error("Failed to retrieve the protocol." + err));
                 try {
                     cardInfo.atr = status.atr.toString("hex");
-                    console.log("Card ATR:", cardInfo.atr);
+                    console.log("Card ATR by connection:", cardInfo.atr);
+
+                    let atrExplicit = (await transmit(reader, protocolReturned, GET_ATR)).toString("hex");
+                    console.log("Card ATR by calling GET_ATR:", atrExplicit);
 
                     cardInfo.cardName = atrMapping[cardInfo.atr.toLowerCase()] || "Unknown card model";
                     console.log("Card Name:", cardInfo.cardName);
