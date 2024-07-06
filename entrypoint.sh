@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# Unbind the device from the pn533_usb driver
+echo -n "3-2:1.0" >/sys/bus/usb/drivers/pn533_usb/unbind
+
+# Bind the device to the ccid driver
+modprobe usbserial vendor=0x072f product=0x2200
+echo -n "3-2:1.0" >/sys/bus/usb/drivers/ccid/bind
+
 # Start pcscd in the background
 /usr/sbin/pcscd --debug --foreground &
 
