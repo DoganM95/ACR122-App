@@ -63,9 +63,7 @@ pcsc.on("reader", async (reader) => {
                 } catch (err) {
                     console.error("Error reading card info:", err);
                 } finally {
-                    await disconnect(reader)
-                        .then(() => console.log("Disconnected."))
-                        .catch((err) => console.error("Disconnect error:", err));
+                    await disconnect(reader);
                     console.log("Card reading complete:", cardInfo);
                 }
             }
@@ -129,8 +127,13 @@ const readAllSectors = async (reader, protocol) => {
             console.log(`Sector ${sector} data:`, data.toString("hex"));
             sector++;
         } catch (err) {
-            console.error(`Error reading sector ${sector}:`, err.message);
-            break;
+            if (err.message.includes("SW1/SW2")) {
+                console.log("No more sectors to read.");
+                break;
+            } else {
+                console.error(`Error reading sector ${sector}:`, err.message);
+                break;
+            }
         }
     }
 };
