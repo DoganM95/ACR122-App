@@ -39,9 +39,9 @@ pcsc.on("reader", async (reader) => {
                     .catch((err) => console.error("Disconnect error:", err));
             } else if (changes & reader.SCARD_STATE_PRESENT && status.state & reader.SCARD_STATE_PRESENT) {
                 console.log("Card inserted");
-                let protocolReturned;
+                let protocol;
                 await connect(reader)
-                    .then((protocol) => (protocolReturned = protocol))
+                    .then((proto) => (protocol = proto))
                     .catch((err) => console.error("Failed to retrieve the protocol." + err));
                 try {
                     cardInfo.uid = (await transmit(reader, protocol, GET_UID)).toString("hex");
@@ -63,7 +63,9 @@ pcsc.on("reader", async (reader) => {
                 } catch (err) {
                     console.error("Error reading card info:", err);
                 } finally {
-                    await disconnect(reader);
+                    await disconnect(reader)
+                        .then(() => console.log("Disconnected."))
+                        .catch((err) => console.error("Disconnect error:", err));
                     console.log("Card reading complete:", cardInfo);
                 }
             }
