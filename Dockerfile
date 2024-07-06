@@ -1,10 +1,13 @@
-FROM node:22
+FROM ubuntu:latest
+
+# Install Node.js and npm
+RUN apt update && apt install -y nodejs npm
 
 # Set working directory
 WORKDIR /usr/src/app
 
 # Install packages
-RUN apt update && apt install -y \
+RUN apt install -y \
     libccid \
     libpcsclite-dev \
     libpcsclite1 \
@@ -25,8 +28,8 @@ COPY ./entrypoint.sh ./
 # Create blacklist
 RUN mkdir -p /etc/modprobe.d/
 RUN touch /etc/modprobe.d/blacklist.conf
-RUN echo install nfc /bin/false > /etc/modprobe.d/blacklist.conf
-RUN echo install pn533 /bin/false >> /etc/modprobe.d/blacklist.conf
+RUN echo "install nfc /bin/false" >> /etc/modprobe.d/blacklist.conf
+RUN echo "install pn533 /bin/false" >> /etc/modprobe.d/blacklist.conf
 
 # Fix permissions
 RUN chmod +x ./entrypoint.sh
