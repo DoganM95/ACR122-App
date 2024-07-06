@@ -170,11 +170,11 @@ const authenticate = async (reader, protocol, block) => {
         // Auth key response: (SW1) (SW2) = 2 Bytes with (9000: success), (6300: error)
         const loadAuthKeysApduFormatIntoReader11Bytes = Buffer.concat([Buffer.from([0xff, 0x82, 0x00, keyN, 0x06]), key]); // keyN = key Number (0x00 || 0x01)
         const authenticateData5Bytes = Buffer.from([0x01, 0x00, block, keyT, 0x00]); // block = block number to be authenticated, keyT = key type used for auth (TYPE A = 60 || TYPE B = 61)
-        const loadAuthKeysApduFormat10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05]), authenticateData5Bytes]);
+        const loadAuthKeysApduFormatFromReader10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05]), authenticateData5Bytes]);
         try {
             await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((data) => (tryNextKey = true));
             if (tryNextKey) continue;
-            await transmit(reader, protocol, loadAuthKeysApduFormat10Bytes).catch((data) => (tryNextKey = true));
+            await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((data) => (tryNextKey = true));
             if (tryNextKey) continue;
             console.log(`Authentication successful with key: ${key.toString("hex")}`);
             return key;
