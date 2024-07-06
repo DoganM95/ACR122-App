@@ -13,31 +13,31 @@ AABBCCDDEEFF
 A0478CC39091
 533CB6C723F6
 8FD0A4F256E9
-# Keys from: http:#pastebin.com/wcTHXLZZ
+# Keys from: http://pastebin.com/wcTHXLZZ
 A64598A77478
 26940B21FF5D
 FC00018778F7
 00000FFE2488
 5C598C9C58B5
 E4D2770A89BE
-# Keys from: http:#pastebin.com/svGjN30Q
+# Keys from: http://pastebin.com/svGjN30Q
 434F4D4D4F41
 434F4D4D4F42
 47524F555041
 47524F555042
 505249564141
 505249564142
-# Keys from: http:#pastebin.com/d7sSetef
+# Keys from: http://pastebin.com/d7sSetef
 0297927C0F77
 EE0042F88840
 722BFCC5375F
 F1D83F964314
-# Keys from: http:#pastebin.com/pvJX0xVS
+# Keys from: http://pastebin.com/pvJX0xVS
 54726176656C
 776974687573
 4AF9D7ADEBE4
 2BA9621E0A36
-# Keys from: http:#pastebin.com/y3PDBWR1
+# Keys from: http://pastebin.com/y3PDBWR1
 000000000001
 123456789ABC
 B127C6F41436
@@ -56,12 +56,12 @@ A94133013401
 A053A292A4AF
 505249565441
 505249565442
-# Keys from: http:#pastebin.com/TUXj17K3
+# Keys from: http://pastebin.com/TUXj17K3
 FC0001877BF7
-# Keys from: http:#0x9000.blogspot.com/2010/12/mifare-classic-default-keys.html
+# Keys from: http://0x9000.blogspot.com/2010/12/mifare-classic-default-keys.html
 A0B0C0D0E0F0
 A1B1C1D1E1F1
-# Keys from: https:#code.google.com/p/mifare-key-cracker/downloads/list
+# Keys from: https://code.google.com/p/mifare-key-cracker/downloads/list
 BD493A3962B6
 010203040506
 111111111111
@@ -79,7 +79,7 @@ CCCCCCCCCCCC
 DDDDDDDDDDDD
 EEEEEEEEEEEE
 0123456789AB
-# Keys from: https:#github.com/4ZM/mfterm/blob/master/dictionary.txt
+# Keys from: https://github.com/4ZM/mfterm/blob/master/dictionary.txt
 000000000002
 00000000000A
 00000000000B
@@ -89,9 +89,9 @@ A00000000000
 B00000000000
 # Key from: ladyada.net
 ABCDEF123456
-http:#irq5.io/2013/04/13/decoding-bcard-conference-badges/
+http://irq5.io/2013/04/13/decoding-bcard-conference-badges/
 F4A9EF2AFC6D
-# Keys from: https:#github.com/iceman1001/proxmark
+# Keys from: https://github.com/iceman1001/proxmark
 4B0B20107CCB
 569369C5A0E5
 632193BE1C3C
@@ -453,7 +453,7 @@ F792C4C76A5C
 F7A39753D018
 F9861526130F
 FAD63ECB5891
-# Some keys of https:#w3bsit3-dns.com and https:#ikey.ru
+# Some keys of https://w3bsit3-dns.com and https://ikey.ru
 BC4580B7F20B
 8E26E45E7D65
 A7141147D430
@@ -647,7 +647,7 @@ F750C0095199
 A229E68AD9E5
 49C2B5296EF4
 # Keys from RfidResearchGroup proxmark3 project
-https:#github.com/RfidResearchGroup/proxmark3/blob/master/client/dictionaries/mfc_default_keys.dic
+https://github.com/RfidResearchGroup/proxmark3/blob/master/client/dictionaries/mfc_default_keys.dic
 0854BF31111E
 0C03A720F208
 135B88A94B8B
