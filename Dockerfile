@@ -19,6 +19,7 @@ RUN npm install
 
 # Copy more stuff
 COPY ./index.js ./
+COPY ./keylist.keys ./
 COPY ./entrypoint.sh ./
 
 # Fix permissions
