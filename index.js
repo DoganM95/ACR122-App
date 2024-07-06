@@ -23,9 +23,8 @@ let cardInfo = {
     readerStatus: null,
 };
 
-// Read keys from keys.txt
 const keys = [];
-const keysFilePath = path.join(__dirname, "keys.txt");
+const keysFilePath = path.join(__dirname, "keylist.keys");
 
 fs.readFileSync(keysFilePath, "utf8")
     .split("\n")
