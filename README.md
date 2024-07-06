@@ -5,6 +5,8 @@ A web based app to control the acr122u nfc card reader hardware
 
 ## Host Machine (Rockstor, based on OpenSUSE (linux))
 
+Perhaps not all of these steps are necessay (if any), but helped in testing to get it running.
+
 The host, this container will run on is supposedly prepared by installing packages and necessary tools
 
 ```bash
