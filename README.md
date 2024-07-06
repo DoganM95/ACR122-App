@@ -1,5 +1,7 @@
-# ACR122-App
-A web based app to control the acr122u nfc card reader hardware
+# Intro
+
+A javascript app to control the acr122u nfc card reader hardware. It will contain a backend, exposing REST endpoints to communicate with the acr122u, which is connected to another linux machine via USB.
+Additionally, there will be a simple frontend, to talk to the backend, providing controls to do stuff like reading, writing, cloning, etc. a card easily, even using a browser on a smartphone.
 
 # Setup
 
