@@ -56,7 +56,7 @@ pcsc.on("error", (err) => {
     console.error("PCSC error", err.message);
 });
 
-async function connect(reader) {
+const connect = async (reader) => {
     return new Promise((resolve, reject) => {
         reader.connect({ share_mode: reader.SCARD_SHARE_SHARED }, function (err, protocol) {
             if (err) {
@@ -67,7 +67,7 @@ async function connect(reader) {
             }
         });
     });
-}
+};
 
 const disconnect = async (reader) => {
     return new Promise((resolve, reject) => {
@@ -92,4 +92,20 @@ const transmit = async (reader, protocol, command) => {
             }
         });
     });
+};
+
+const readAllSectors = async (reader, protocol) => {
+    let sector = 0;
+    while (true) {
+        try {
+            const command = READ_SECTOR(sector);
+            const data = await transmit(reader, protocol, command);
+            cardInfo.sectors[`sector${sector}`] = data.toString("hex");
+            console.log(`Sector ${sector} data:`, data.toString("hex"));
+            sector++;
+        } catch (err) {
+            console.error(`Error reading sector ${sector}:`, err.message);
+            break;
+        }
+    }
 };
