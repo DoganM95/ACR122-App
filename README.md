@@ -32,3 +32,24 @@ And then rebooting
 ```bash
 reboot
 ```
+
+
+## Docker Container
+
+The privileges it gets need to be tested to see if they are really necessary.  
+
+- `acr122u-js-staging` is the unstable package that is used to test new implementations
+- `acr122u-js` is the package to use normally, containing the stable master branch app
+
+```bash
+docker run \
+  --cap-add=SYS_ADMIN \
+  --cap-add=MKNOD \
+  --device /dev/bus/usb \
+  -it \
+  --name acr \
+  --privileged \
+  --pull always \
+  --restart always \
+  ghcr.io/doganm95/acr122u-js:latest
+```
