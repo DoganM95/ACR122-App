@@ -1,21 +1,19 @@
 #!/bin/bash
 
-# Unbind the device from the pn533_usb driver
-echo -n "3-2:1.0" >/sys/bus/usb/drivers/pn533_usb/unbind
+# Start the PC/SC daemon
+/usr/sbin/pcscd &
 
-# Bind the device to the ccid driver
-modprobe usbserial vendor=0x072f product=0x2200
-echo -n "3-2:1.0" >/sys/bus/usb/drivers/ccid/bind
+# Ensure the blacklist.conf is in place
+if [ ! -f /etc/modprobe.d/blacklist.conf ]; then
+    echo "install nfc /bin/false" >>/etc/modprobe.d/blacklist.conf
+    echo "install pn533 /bin/false" >>/etc/modprobe.d/blacklist.conf
+fi
 
-# Start pcscd in the background
-/usr/sbin/pcscd --debug --foreground &
+# Reload udev rules
+udevadm control --reload-rules
 
-# Give pcscd some time to start
+# Wait for a bit to ensure everything is up and running
 sleep 2
 
-# Debugging: List USB devices and check pcscd status
-lsusb
-ps aux | grep pcscd
-
-# Start the Node.js application
+# Execute the main process
 exec "$@"
