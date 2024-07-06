@@ -5,12 +5,15 @@ const pcsc = pcsclite();
 
 console.log("Looking for a reader device...");
 
-// Commands specific to ACR122U
-const GET_ATR = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x00]);
+// Commands specific to ACR122U, with SW1,SW2 = (0900: success), (6300: error-operation-failed), (6A81: error-func-not-supported)
+const GET_ATR = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Response: {ATS} (SW1) (SW2)
+const GET_ATR_FULL_LENGTH = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x00]); // Response: (UID-LSB) () () (UID MSB) (SW1) (SW2) = 6 Bytes
 const GET_FIRMWARE_VERSION = Buffer.from([0xff, 0x00, 0x48, 0x00, 0x00]);
 const GET_PICC_OPERATING_PARAMETERS = Buffer.from([0xff, 0x00, 0x50, 0x00, 0x00]);
 const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]);
+const GET_UID_PDF = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x04]);
+const GET_ATS_PDF = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x04]);
 
 const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
 
@@ -83,8 +86,8 @@ pcsc.on("reader", async (reader) => {
                     cardInfo.atr = status.atr.toString("hex");
                     console.log("Card ATR by connection:", cardInfo.atr);
 
-                    let atrExplicit = (await transmit(reader, protocolReturned, GET_ATR)).toString("hex");
-                    console.log("Card ATR by calling GET_ATR:", atrExplicit);
+                    let atrExplicit = (await transmit(reader, protocolReturned, GET_ATR_FULL_LENGTH)).toString("hex");
+                    console.log("Card ATR by calling GET_ATR_FULL_LENGTH:", atrExplicit);
 
                     cardInfo.cardName = atrMapping[cardInfo.atr.toLowerCase()] || "Unknown card model";
                     console.log("Card Name:", cardInfo.cardName);
