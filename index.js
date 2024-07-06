@@ -163,10 +163,15 @@ const transmit = async (reader, protocol, command) => {
 };
 
 const authenticate = async (reader, protocol, sector) => {
+    // Authentication on Mifare 1K needs to be done only once per sector, each block in that sector can be read afterwards
     for (let key of keys) {
-        const command = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, sector, 0x60, 0x00]), key]);
+        // Auth key response: (SW1) (SW2) = 2 Bytes with (9000: success), (6300: error)
+        const loadAuthKeysApduFormat10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, sector, 0x60, 0x00]), key]);
+        const loadAuthKeysApduFormat11Bytes = Buffer.concat([Buffer.from([0xff, 0x82, 0x00, 0x00, 0x06, 0x01, 0x00, sector, 0x60, 0x00]), key]);
+        // block = block number to be authenticated, keyT = key type used for auth (TYPE A = 60 || TYPE B = 61)
+        const authenticateData5Bytes = Buffer.from([0x01, 0x00, block, keyT, 0x00]);
         try {
-            await transmit(reader, protocol, command);
+            await transmit(reader, protocol, loadAuthKeysApduFormat10Bytes);
             console.log(`Authentication successful with key: ${key.toString("hex")}`);
             return key;
         } catch (err) {
