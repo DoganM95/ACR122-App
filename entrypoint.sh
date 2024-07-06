@@ -9,6 +9,9 @@ fi
 # Reload udev rules
 udevadm control --reload-rules
 
+# Start the udev service
+service udev start
+
 # Start the PC/SC daemon
 /usr/sbin/pcscd &
 

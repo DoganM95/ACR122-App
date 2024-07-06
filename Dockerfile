@@ -14,7 +14,7 @@ RUN apt update && apt install -y \
     pcsc-tools \
     pcscd \
     udev \
-    usbutils
+    usbutils 
 
 # Install npm dependencies
 COPY package*.json ./
