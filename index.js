@@ -1,6 +1,7 @@
 const pcsclite = require("pcsclite");
+const fs = require("fs");
+const path = require("path");
 const pcsc = pcsclite();
-const { DEFAULT_KEYS } = require("./keys");
 
 console.log("Looking for a reader device...");
 
@@ -11,7 +12,7 @@ const GET_PICC_OPERATING_PARAMETERS = Buffer.from([0xff, 0x00, 0x50, 0x00, 0x00]
 const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]);
 
-const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 16]); // Command to read block
+const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
 
 let cardInfo = {
     uid: null,
@@ -21,6 +22,23 @@ let cardInfo = {
     piccOperatingParameters: null,
     readerStatus: null,
 };
+
+// Read keys from keys.txt
+const keys = [];
+const keysFilePath = path.join(__dirname, "keys.txt");
+
+fs.readFileSync(keysFilePath, "utf8")
+    .split("\n")
+    .forEach((line) => {
+        line = line.trim();
+        if (line && !line.startsWith("#")) {
+            try {
+                keys.push(Buffer.from(line, "hex"));
+            } catch (err) {
+                console.error(`Failed to parse key: ${line}`, err);
+            }
+        }
+    });
 
 pcsc.on("reader", async (reader) => {
     console.log("Reader detected:", reader.name);
@@ -119,40 +137,32 @@ const transmit = async (reader, protocol, command) => {
 };
 
 const authenticate = async (reader, protocol, sector) => {
-    const block = sector * 4;
-    for (let key of DEFAULT_KEYS) {
-        const command = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, block, 0x60, 0x00]), key]);
+    for (let key of keys) {
+        const command = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05, 0x01, 0x00, sector, 0x60, 0x00]), key]);
         try {
             await transmit(reader, protocol, command);
-            console.log(`Authenticated sector ${sector} with key ${key.toString("hex")}`);
-            return true;
+            console.log(`Authentication successful with key: ${key.toString("hex")}`);
+            return key;
         } catch (err) {
-            console.error(`Authentication failed for sector ${sector} with key ${key.toString("hex")}:`, err.message);
+            // Continue to the next key
         }
     }
-    return false;
+    throw new Error(`Authentication failed for sector ${sector}`);
 };
 
 const readAllSectors = async (reader, protocol) => {
     let sector = 0;
     while (true) {
-        const authenticated = await authenticate(reader, protocol, sector);
-        if (!authenticated) {
-            console.error(`Failed to authenticate sector ${sector}`);
+        try {
+            const key = await authenticate(reader, protocol, sector);
+            const command = READ_SECTOR(sector);
+            const data = await transmit(reader, protocol, command);
+            cardInfo.sectors[`sector${sector}`] = data.toString("hex");
+            console.log(`Sector ${sector} data:`, data.toString("hex"));
+            sector++;
+        } catch (err) {
+            console.error(`Error reading sector ${sector}:`, err.message);
             break;
         }
-
-        for (let block = sector * 4; block < sector * 4 + 4; block++) {
-            try {
-                const command = READ_BLOCK(block);
-                const data = await transmit(reader, protocol, command);
-                cardInfo.sectors[`block${block}`] = data.toString("hex");
-                console.log(`Block ${block} data:`, data.toString("hex"));
-            } catch (err) {
-                console.error(`Error reading block ${block}:`, err.message);
-                break;
-            }
-        }
-        sector++;
     }
 };
