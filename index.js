@@ -5,6 +5,11 @@ console.log("Looking for a reader device...");
 
 // Commands specific to acr122u
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]);
+const GET_ATR = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Placeholder for ATR command
+const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]);
+const GET_FIRMWARE_VERSION = Buffer.from([0xff, 0x00, 0x48, 0x00, 0x00]);
+const GET_PICC_OPERATING_PARAMETERS = Buffer.from([0xff, 0x00, 0x50, 0x00, 0x00]);
+const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
 
 let cardUid;
 let cardData;
@@ -32,7 +37,7 @@ pcsc.on("reader", function (reader) {
                 });
             } else if (changes & reader.SCARD_STATE_PRESENT && status.state & reader.SCARD_STATE_PRESENT) {
                 console.log("Card inserted");
-                reader.connect({ share_mode: reader.SCARD_SHARE_SHARED }, function (err, protocol) {
+                reader.connect({ share_mode: reader.SCARD_SHARE_SHARED }, (err, protocol) => {
                     if (!err) {
                         console.log("Connected, protocol:", protocol);
                         reader.transmit(GET_UID, 40, protocol, function (err, data) {
