@@ -15,6 +15,7 @@ const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]);
 const GET_UID_PDF = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x04]);
 const GET_ATS_PDF = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x04]);
 
+
 const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
 
 let cardInfo = {
@@ -95,7 +96,7 @@ pcsc.on("reader", async (reader) => {
                     cardInfo.uid = (await transmit(reader, protocolReturned, GET_UID)).toString("hex");
                     console.log("Card UID:", cardInfo.uid);
 
-                    cardInfo.firmwareVersion = (await transmit(reader, protocolReturned, GET_FIRMWARE_VERSION)).toString("hex");
+                    cardInfo.firmwareVersion = (await transmit(reader, protocolReturned, GET_FIRMWARE_VERSION)).toString("hex"); // TODO: to ascii
                     console.log("Firmware Version:", cardInfo.firmwareVersion);
 
                     cardInfo.piccOperatingParameters = (await transmit(reader, protocolReturned, GET_PICC_OPERATING_PARAMETERS)).toString("hex");
