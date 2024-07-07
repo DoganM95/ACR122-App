@@ -8,7 +8,8 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
-    "pcsclite": "^1.0.1"
+    "pcsclite": "^1.0.1",
+    "express": "^4.19.2"
   },
   "author": "",
   "license": "ISC"

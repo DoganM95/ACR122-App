@@ -1,8 +1,7 @@
 #!/bin/bash
-set -e
 
-# Start the PCSC daemon
-/etc/init.d/pcscd start
+# Start the pcscd daemon
+/usr/sbin/pcscd -f &
 
-# Run the main application
+# Execute the provided command (pm2-runtime)
 exec "$@"
