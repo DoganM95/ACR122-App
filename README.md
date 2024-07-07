@@ -35,7 +35,6 @@ And then rebooting
 reboot
 ```
 
-
 ## Docker Container
 
 The privileges it gets need to be tested to see if they are really necessary.  
@@ -62,3 +61,7 @@ To authorize the reading device on a card, the correct key needs to be used. The
 
 - [std.keys](https://github.com/ikarus23/MifareClassicTool/blob/master/Mifare%20Classic%20Tool/app/src/main/assets/key-files/std.keys)
 - [extended-std.keys](https://github.com/ikarus23/MifareClassicTool/blob/master/Mifare%20Classic%20Tool/app/src/main/assets/key-files/extended-std.keys)
+
+# Ex
+
+Payload exports (the file containing blocks of bytes, where each sector has 4 blocks) are exported / imported as `json` files, compatible with `acr122u-js`, `Proxmark` & `Chameleon Mini GUI`.
