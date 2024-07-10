@@ -14,11 +14,13 @@ const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Returns UID + 2 Bytes (00, 00)
 const GET_UID_PDF = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x04]);
 const GET_ATS_PDF = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x04]);
+const GET_UID_CHANGEABILITY = Buffer.from([0x40, 0x00, 0x00, 0x00]);
 
 const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
 
 let cardInfo = {
     uid: null,
+    isCuid: null,
     atr: null,
     sectors: {},
     firmwareVersion: null,
@@ -107,6 +109,10 @@ pcsc.on("reader", async (reader) => {
                     const uidResponseCode = uidResponse.slice(-4);
                     cardInfo.uid = uidResponse.slice(0, -4);
                     console.log("Card UID:", cardInfo.uid, "with status:", uidResponseCode);
+
+                    const isCuidResponse = (await transmit(reader, protocolReturned, GET_UID_CHANGEABILITY)).toString("hex");
+                    cardInfo.isCuid = Buffer.from(isCuidResponse).equals(Buffer.from([0x00, 0x00, 0x00, 0x00]))
+                    console.log("Card UID changeable:", cardInfo.isCuid)
 
                     cardInfo.firmwareVersion = (await transmit(reader, protocolReturned, GET_FIRMWARE_VERSION)).toString("hex");
                     console.log("Firmware Version:", cardInfo.firmwareVersion);
