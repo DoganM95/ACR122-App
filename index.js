@@ -219,9 +219,9 @@ const readCardData = async (reader, protocol) => {
             console.log("--- Authenticating block", block);
             await authenticate(reader, protocol, block);
             const command = READ_BLOCK(block);
-            const data = await transmit(reader, protocol, command);
-            cardInfo.sectors[`block${block}`] = data.toString("hex");
-            console.log(`Block ${block} data:`, data.toString("hex"));
+            const data = await transmit(reader, protocol, command); // Response = (block: N Bytes + sw1,sw2: 2 Bytes)
+            cardInfo.sectors[`block${block}`] = data.toString("hex").slice(0, -4);
+            console.log(`Block ${block} data:`, data.toString("hex").slice(0, -4));
         } catch (err) {
             console.error(`Error reading block ${block}:`, err.message);
         }
