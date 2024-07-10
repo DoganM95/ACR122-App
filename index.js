@@ -187,21 +187,26 @@ const transmit = async (reader, protocol, command) => {
 // Auth key response: (SW1) (SW2) = 2 Bytes with (9000: success), (6300: error)
 // block = block number to be authenticated, keyT = key type used for auth (TYPE A = 60 || TYPE B = 61)
 // keyN = key Number (0x00 || 0x01)
-const authenticate = async (reader, protocol, block) => {
+const authenticate = async (reader, protocol, block, sector) => {
     for (let key of keys) {
-        let tryNextKey = false;
-        const loadAuthKeysApduFormatIntoReader11Bytes = Buffer.concat([Buffer.from([0xff, 0x82, 0x00, keyN, 0x06]), key]);
-        const authenticateData5Bytes = Buffer.from([0x01, 0x00, block, keyT, 0x00]);
-        const loadAuthKeysApduFormatFromReader10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05]), authenticateData5Bytes]);
-        try {
-            await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((err) => (tryNextKey = true));
-            if (tryNextKey) continue;
-            await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((err) => (tryNextKey = true));
-            if (tryNextKey) continue;
-            console.log(`Authentication successful with key: ${key.toString("hex")}`);
-            return key;
-        } catch (err) {
-            // Continue to the next key
+        for (let keyType of [0x60, 0x61]) { // 0x60 for Key A, 0x61 for Key B
+            let tryNextKey = false;
+            const keyN = 0x00; // Usually 0x00
+
+            const loadAuthKeysApduFormatIntoReader11Bytes = Buffer.concat([Buffer.from([0xff, 0x82, 0x00, keyN, 0x06]), key]);
+            const authenticateData5Bytes = Buffer.from([0x01, 0x00, block, keyType, 0x00]);
+            const loadAuthKeysApduFormatFromReader10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05]), authenticateData5Bytes]);
+
+            try {
+                await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((err) => (tryNextKey = true));
+                if (tryNextKey) continue;
+                await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((err) => (tryNextKey = true));
+                if (tryNextKey) continue;
+                console.log(`Authentication successful with key: ${key.toString("hex")} and key type: ${keyType === 0x60 ? 'A' : 'B'}`);
+                return { key, keyType };
+            } catch (err) {
+                // Continue to the next key
+            }
         }
     }
     throw new Error(`Authentication failed for sector ${sector}`);
