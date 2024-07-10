@@ -10,12 +10,13 @@ const GET_ATR = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Response: {ATS} 
 const GET_ATR_FULL_LENGTH = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x00]); // Response: (UID-LSB) () () (UID MSB) (SW1) (SW2) = 6 Bytes
 const GET_FIRMWARE_VERSION = Buffer.from([0xff, 0x00, 0x48, 0x00, 0x00]);
 const GET_PICC_OPERATING_PARAMETERS = Buffer.from([0xff, 0x00, 0x50, 0x00, 0x00]);
-const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]);
+const GET_READER_STATUS = Buffer.from([0xff, 0x00, 0x64, 0x00, 0x00]); // TODO: check
 const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Returns UID + 2 Bytes (00, 00)
 const GET_UID_PDF = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x04]);
 const GET_ATS_PDF = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x04]);
 const GET_UID_CHANGEABILITY = Buffer.from([0x40, 0x00, 0x00, 0x00]);
 
+const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 16]);
 const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
 
 let cardInfo = {
@@ -123,7 +124,7 @@ pcsc.on("reader", async (reader) => {
                     cardInfo.readerStatus = (await transmit(reader, protocolReturned, GET_READER_STATUS)).toString("hex");
                     console.log("Reader Status:", cardInfo.readerStatus);
 
-                    await readAllSectors(reader, protocolReturned);
+                    await readCardData(reader, protocolReturned);
                 } catch (err) {
                     console.error("Error reading card info:", err);
                 } finally {
@@ -163,7 +164,6 @@ const disconnect = async (reader) => {
             if (err) {
                 reject(err);
             } else {
-                console.log("Disconnected");
                 resolve();
             }
         });
@@ -198,9 +198,9 @@ const authenticate = async (reader, protocol, block, sector) => {
             const loadAuthKeysApduFormatFromReader10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05]), authenticateData5Bytes]);
 
             try {
-                await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((err) => (tryNextKey = true));
+                let bufRes1 = await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((err) => (tryNextKey = true));
                 if (tryNextKey) continue;
-                await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((err) => (tryNextKey = true));
+                let bufRes2 = await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((err) => (tryNextKey = true));
                 if (tryNextKey) continue;
                 console.log(`Authentication successful with key: ${key.toString("hex")} and key type: ${keyType === 0x60 ? 'A' : 'B'}`);
                 return { key, keyType };
@@ -212,25 +212,18 @@ const authenticate = async (reader, protocol, block, sector) => {
     throw new Error(`Authentication failed for sector ${sector}`);
 };
 
-const readAllSectors = async (reader, protocol) => {
-    let sector = 0;
-    const maxSectors = 64;
-    while (sector < maxSectors) {
+const readCardData = async (reader, protocol) => {
+    const maxBlocks = 64; // For MIFARE Classic 1K, it has 16 sectors (each with 4 blocks), 64 blocks in total
+    for (let block = 0; block < maxBlocks; block++) {
         try {
-            const key = await authenticate(reader, protocol, sector);
-            const command = READ_SECTOR(sector);
+            console.log("--- Authenticating block", block);
+            await authenticate(reader, protocol, block);
+            const command = READ_BLOCK(block);
             const data = await transmit(reader, protocol, command);
-            if (data.length === 16 && data.toString("hex")) {
-                cardInfo.sectors[`sector${sector}`] = data.toString("hex");
-                console.log(`Sector ${sector} data:`, data.toString("hex"));
-            } else {
-                console.log(`Sector ${sector} is empty or invalid`);
-                break;
-            }
-            sector++;
+            cardInfo.sectors[`block${block}`] = data.toString("hex");
+            console.log(`Block ${block} data:`, data.toString("hex"));
         } catch (err) {
-            console.error(`Error reading sector ${sector}:`, err.message);
-            break;
+            console.error(`Error reading block ${block}:`, err.message);
         }
     }
 };
