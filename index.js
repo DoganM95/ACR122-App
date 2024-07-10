@@ -39,19 +39,18 @@ const atrMapping = {
     "3b8f8001804f0ca00000030603F012000000006a": "FeliCa 424K",
 };
 
-const keys = [];
+const keys = []; // Array in ram for speedy iteration
 const keysFilePath = path.join(__dirname, "keylist.keys");
-
 fs.readFileSync(keysFilePath, "utf8")
     .split("\n")
     .forEach((line) => {
-        line = line.trim();
-        if (line && !line.startsWith("#")) {
-            try {
+        try {
+            line = line.trim();
+            if (line && !line.startsWith("#")) {
                 keys.push(Buffer.from(line, "hex"));
-            } catch (err) {
-                console.error(`Failed to parse key: ${line}`, err);
             }
+        } catch (err) {
+            console.error(`Failed to parse key: ${line}`, err);
         }
     });
 
