@@ -128,6 +128,7 @@ pcsc.on("reader", async (reader) => {
                     console.error("Error reading card info:", err);
                 } finally {
                     await disconnect(reader);
+                    console.log("----------")
                     console.log("Card reading complete:", cardInfo);
                 }
             }
@@ -181,19 +182,21 @@ const transmit = async (reader, protocol, command) => {
     });
 };
 
+// Sectors are divided into 4 blocks each, 16th Sector's last block = 0x3F (= 16h*04h)
+// Authentication on Mifare 1K is necessary only once per sector, each block in that sector can be read afterwards
+// Auth key response: (SW1) (SW2) = 2 Bytes with (9000: success), (6300: error)
+// block = block number to be authenticated, keyT = key type used for auth (TYPE A = 60 || TYPE B = 61)
+// keyN = key Number (0x00 || 0x01)
 const authenticate = async (reader, protocol, block) => {
-    // Sectors are divided into 4 blocks each, 16th Sector's last block = 0x3F (= 16h*04h)
-    // Authentication on Mifare 1K is necessary only once per sector, each block in that sector can be read afterwards
     for (let key of keys) {
         let tryNextKey = false;
-        // Auth key response: (SW1) (SW2) = 2 Bytes with (9000: success), (6300: error)
-        const loadAuthKeysApduFormatIntoReader11Bytes = Buffer.concat([Buffer.from([0xff, 0x82, 0x00, keyN, 0x06]), key]); // keyN = key Number (0x00 || 0x01)
-        const authenticateData5Bytes = Buffer.from([0x01, 0x00, block, keyT, 0x00]); // block = block number to be authenticated, keyT = key type used for auth (TYPE A = 60 || TYPE B = 61)
+        const loadAuthKeysApduFormatIntoReader11Bytes = Buffer.concat([Buffer.from([0xff, 0x82, 0x00, keyN, 0x06]), key]);
+        const authenticateData5Bytes = Buffer.from([0x01, 0x00, block, keyT, 0x00]);
         const loadAuthKeysApduFormatFromReader10Bytes = Buffer.concat([Buffer.from([0xff, 0x86, 0x00, 0x00, 0x05]), authenticateData5Bytes]);
         try {
-            await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((data) => (tryNextKey = true));
+            await transmit(reader, protocol, loadAuthKeysApduFormatIntoReader11Bytes).catch((err) => (tryNextKey = true));
             if (tryNextKey) continue;
-            await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((data) => (tryNextKey = true));
+            await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((err) => (tryNextKey = true));
             if (tryNextKey) continue;
             console.log(`Authentication successful with key: ${key.toString("hex")}`);
             return key;
