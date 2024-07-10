@@ -1,0 +1,73 @@
+{
+    "MIFARE Classic": {
+        "UID Lengths": [
+            "4-byte",
+            "7-byte"
+        ],
+        "Variants": [
+            "1K",
+            "4K"
+        ]
+    },
+    "MIFARE DESFire": {
+        "UID Lengths": [
+            "7-byte",
+            "8-byte"
+        ],
+        "Variants": [
+            "EV1",
+            "EV2"
+        ]
+    },
+    "MIFARE Ultralight": {
+        "UID Lengths": [
+            "7-byte"
+        ],
+        "Variants": [
+            "Ultralight",
+            "Ultralight C"
+        ]
+    },
+    "NTAG Series": {
+        "UID Lengths": [
+            "7-byte"
+        ],
+        "Variants": [
+            "NTAG203",
+            "NTAG213",
+            "NTAG215",
+            "NTAG216"
+        ]
+    },
+    "ICODE Series": {
+        "UID Lengths": [
+            "7-byte"
+        ],
+        "Variants": [
+            "SLIX",
+            "SLIX2"
+        ]
+    },
+    "FeliCa": {
+        "UID Lengths": [
+            "8-byte"
+        ],
+        "Variants": [
+            "Standard",
+            "Lite"
+        ]
+    },
+    "ISO/IEC 14443 Type A": {
+        "UID Lengths": [
+            "4-byte",
+            "7-byte",
+            "10-byte"
+        ]
+    },
+    "ISO/IEC 14443 Type B": {
+        "UID Lengths": [
+            "4-byte",
+            "7-byte"
+        ]
+    }
+}
