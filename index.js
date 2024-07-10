@@ -16,8 +16,9 @@ const GET_UID_PDF = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x04]);
 const GET_ATS_PDF = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x04]);
 const GET_UID_CHANGEABILITY = Buffer.from([0x40, 0x00, 0x00, 0x00]);
 
-const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 16]);
-const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read sector
+const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 16]); // Command to read a block
+const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read a whole sector
+const WRITE_BLOCK = (block, data) => Buffer.from([0xff, 0xd7, 0x00, block, 0x05, 0x00, data]); // Data = long int, 4 bytes
 
 let cardInfo = {
     uid: null,
