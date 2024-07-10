@@ -29,27 +29,29 @@ let cardInfo = {
 
 // Mapping of ATRs to card names, explained byte by byte, see page 8
 // Bytes: (0: Initial header), (1: T0), (2: TD1), (3: TD2), (4 to 3+N: T1, Tk, RFU), (4+N: TCK)
+const preMappingPattern = "3b8f8001804f0ca00000030603";
+const postMappingPattern = "000000006a";
 const atrMapping = {
-    "3b8f8001804f0ca00000030603F011000000006a": "FeliCa 212K", // See ACR122u Datasheet
-    "3b8f8001804f0ca00000030603F012000000006a": "FeliCa 424K", // See ACR122u Datasheet
-    "3b8f8001804f0ca00000030603F020000000006a": "ICODE SLIX2", // See NXP datasheet
-    "3b8f8001804f0ca000000306030025000000006a": "ICODE SLIX", // See NXP datasheet
-    "3b8f8001804f0ca00000030603F030000000006a": "ISO14443A 4-byte UID", // General pattern for ISO14443A
-    "3b8f8001804f0ca00000030603F040000000006a": "ISO14443A 7-byte UID", // General pattern for ISO14443A
-    "3b8f8001804f0ca00000030603F050000000006a": "ISO14443A 10-byte UID", // General pattern for ISO14443A
-    "3b8f8001804f0ca00000030603F060000000006a": "ISO14443B 4-byte UID", // General pattern for ISO14443B
-    "3b8f8001804f0ca00000030603F070000000006a": "ISO14443B 7-byte UID", // General pattern for ISO14443B
-    "3b8f8001804f0ca00000030603F025000000006a": "MIFARE DESFire EV1", // See NXP datasheet
-    "3b8f8001804f0ca00000030603F027000000006a": "MIFARE DESFire EV2", // See NXP datasheet
-    "3b8f8001804f0ca000000306030001000000006a": "MIFARE Classic 1K", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030002000000006a": "MIFARE Classic 4K", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030026000000006a": "MIFARE Mini", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030003000000006a": "MIFARE Ultralight", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030021000000006a": "NTAG203", // Common for NTAG203
-    "3b8f8001804f0ca000000306030022000000006a": "NTAG213", // Common for NTAG213
-    "3b8f8001804f0ca000000306030023000000006a": "NTAG215", // Common for NTAG215
-    "3b8f8001804f0ca000000306030024000000006a": "NTAG216", // Common for NTAG216
-    "3b8f8001804f0ca00000030603F004000000006a": "Topaz and Jewel", // See ACR122u Datasheet
+    "0001": "MIFARE Classic 1K", // See ACR122u Datasheet
+    "0002": "MIFARE Classic 4K", // See ACR122u Datasheet
+    "0003": "MIFARE Ultralight", // See ACR122u Datasheet
+    "0021": "NTAG203", // Common for NTAG203
+    "0022": "NTAG213", // Common for NTAG213
+    "0023": "NTAG215", // Common for NTAG215
+    "0024": "NTAG216", // Common for NTAG216
+    "0025": "ICODE SLIX", // See NXP datasheet
+    "0026": "MIFARE Mini", // See ACR122u Datasheet
+    "F004": "Topaz and Jewel", // See ACR122u Datasheet
+    "F011": "FeliCa 212K", // See ACR122u Datasheet
+    "F012": "FeliCa 424K", // See ACR122u Datasheet
+    "F020": "ICODE SLIX2", // See NXP datasheet
+    "F025": "MIFARE DESFire EV1", // See NXP datasheet
+    "F027": "MIFARE DESFire EV2", // See NXP datasheet
+    "F030": "ISO14443A 4-byte UID", // General pattern for ISO14443A
+    "F040": "ISO14443A 7-byte UID", // General pattern for ISO14443A
+    "F050": "ISO14443A 10-byte UID", // General pattern for ISO14443A
+    "F060": "ISO14443B 4-byte UID", // General pattern for ISO14443B
+    "F070": "ISO14443B 7-byte UID", // General pattern for ISO14443B
 };
 
 const keys = []; // Array in ram for speedy iteration
@@ -98,7 +100,7 @@ pcsc.on("reader", async (reader) => {
                     let atrExplicit = (await transmit(reader, protocolReturned, GET_ATR_FULL_LENGTH)).toString("hex");
                     console.log("Card ATR by calling GET_ATR_FULL_LENGTH:", atrExplicit);
 
-                    cardInfo.cardName = atrMapping[cardInfo.atr.toLowerCase()] || "Unknown card model";
+                    cardInfo.cardName = atrMapping[cardInfo.atr.toLowerCase().replace(preMappingPattern, "").replace(postMappingPattern, "")] || "Unknown card model";
                     console.log("Card Name:", cardInfo.cardName);
 
                     cardInfo.uid = (await transmit(reader, protocolReturned, GET_UID)).toString("hex");
