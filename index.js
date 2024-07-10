@@ -28,12 +28,7 @@ let cardInfo = {
 };
 
 // Mapping of ATRs to card names, explained byte by byte, see page 8
-// Byte 0: Initial header
-// Byte 1: T0
-// Byte 2: TD1
-// Byte 3: TD2
-// Byte 4 to 3+N: T1, Tk, RFU
-// Byte 4+N: TCK
+// Bytes: (0: Initial header), (1: T0), (2: TD1), (3: TD2), (4 to 3+N: T1, Tk, RFU), (4+N: TCK)
 const atrMapping = {
     "3b8f8001804f0ca000000306030001000000006a": "MIFARE Classic 1K",
     "3b8f8001804f0ca000000306030002000000006a": "MIFARE Classic 4K",
