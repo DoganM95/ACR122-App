@@ -22,9 +22,10 @@ COPY package*.json ./
 RUN npm install
 
 # Copy more stuff
-COPY ./index.js ./
-COPY ./keylist.keys ./
-COPY ./entrypoint.sh ./
+# COPY ./index.js ./
+# COPY ./keylist.keys ./
+# COPY ./entrypoint.sh ./
+COPY . .
 
 # Create blacklist
 RUN mkdir -p /etc/modprobe.d/
