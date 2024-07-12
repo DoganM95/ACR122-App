@@ -1,6 +1,7 @@
 const pcsclite = require("pcsclite"); // https://www.npmjs.com/package/pcsclite
 const fs = require("fs");
 const path = require("path");
+const atrMapping = require("./db.js"); // Import the atrMapping from db.js
 const pcsc = pcsclite();
 
 console.log("Looking for a reader device...");
@@ -24,38 +25,14 @@ let cardInfo = {
     uid: null,
     isCuid: null,
     atr: null,
-    sectors: {},
+    blocks: {},
     firmwareVersion: null,
     piccOperatingParameters: null,
     readerStatus: null,
     cardName: null,
-};
-
-// Mapping of ATRs to card names, explained byte by byte, see page 8
-// Bytes: (0: Initial header), (1: T0), (2: TD1), (3: TD2), (4 to 3+N: T1, Tk, RFU), (4+N: TCK)
-const atrMapping = {
-    "3b8f8001804f0ca00000030603F011000000006a": "FeliCa 212K", // See ACR122u Datasheet
-    "3b8f8001804f0ca00000030603F012000000006a": "FeliCa 424K", // See ACR122u Datasheet
-    "3b8f8001804f0ca00000030603F020000000006a": "ICODE SLIX2", // See NXP datasheet
-    "3b8f8001804f0ca000000306030025000000006a": "ICODE SLIX", // See NXP datasheet
-    "3b8f8001804f0ca00000030603F030000000006a": "ISO14443A 4-byte UID", // General pattern for ISO14443A
-    "3b8f8001804f0ca00000030603F040000000006a": "ISO14443A 7-byte UID", // General pattern for ISO14443A
-    "3b8f8001804f0ca00000030603F050000000006a": "ISO14443A 10-byte UID", // General pattern for ISO14443A
-    "3b8f8001804f0ca00000030603F060000000006a": "ISO14443B 4-byte UID", // General pattern for ISO14443B
-    "3b8f8001804f0ca00000030603F070000000006a": "ISO14443B 7-byte UID", // General pattern for ISO14443B
-    "3b8f8001804f0ca00000030603F025000000006a": "MIFARE DESFire EV1", // See NXP datasheet
-    "3b8f8001804f0ca00000030603F027000000006a": "MIFARE DESFire EV2", // See NXP datasheet
-    "3b8f8001804f0ca000000306030001000000006a": "MIFARE Classic 1K", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030002000000006a": "MIFARE Classic 4K", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030026000000006a": "MIFARE Mini", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030003000000006a": "MIFARE Ultralight", // See ACR122u Datasheet
-    "3b8f8001804f0ca000000306030021000000006a": "NTAG203", // Common for NTAG203
-    "3b8f8001804f0ca000000306030022000000006a": "NTAG213", // Common for NTAG213
-    "3b8f8001804f0ca000000306030023000000006a": "NTAG215", // Common for NTAG215
-    "3b8f8001804f0ca000000306030024000000006a": "NTAG216", // Common for NTAG216
-    "3b8f8001804f0ca00000030603F004000000006a": "Topaz and Jewel", // See ACR122u Datasheet
-    // Some exotic, wild cards from aliexpress
-    "3b8f8001804f0ca0000003060300030000000068": "NTAG213 Sticker", // Model GYH4749, Brand CUJMH
+    // Additional, inconsistent stuff for mifare classic tool compatibility
+    Created: "ACR122u-App",
+    FileType: "mfcard",
 };
 
 const keys = []; // Array in ram for speedy iteration
@@ -84,13 +61,11 @@ pcsc.on("reader", async (reader) => {
         console.log("Status state: " + status.state);
         const changes = reader.state ^ status.state; // bitwise XOR operation to check for changes
         if (changes) {
-
             if (changes & reader.SCARD_STATE_EMPTY && status.state & reader.SCARD_STATE_EMPTY) {
                 console.log("Card removed");
                 await disconnect(reader)
                     .then(() => console.log("Disconnected."))
                     .catch((err) => console.error("Disconnect error:", err));
-
             } else if (changes & reader.SCARD_STATE_PRESENT && status.state & reader.SCARD_STATE_PRESENT) {
                 console.log("Card inserted");
                 try {
@@ -104,7 +79,8 @@ pcsc.on("reader", async (reader) => {
                     let atrExplicit = (await transmit(reader, protocolReturned, GET_ATR_FULL_LENGTH)).toString("hex");
                     console.log("Card ATR by calling GET_ATR_FULL_LENGTH:", atrExplicit);
 
-                    cardInfo.cardName = atrMapping[cardInfo.atr.toLowerCase()] || "Unknown card model";
+                    // Find the card name based on ATR
+                    cardInfo.cardName = Object.keys(atrMapping).find((key) => atrMapping[key].atr.toLowerCase() === cardInfo.atr.toLowerCase()) || "Unknown card model";
                     console.log("Card Name:", cardInfo.cardName);
 
                     const uidResponse = (await transmit(reader, protocolReturned, GET_UID)).toString("hex");
@@ -113,8 +89,8 @@ pcsc.on("reader", async (reader) => {
                     console.log("Card UID:", cardInfo.uid, "with status:", uidResponseCode);
 
                     const isCuidResponse = (await transmit(reader, protocolReturned, GET_UID_CHANGEABILITY)).toString("hex");
-                    cardInfo.isCuid = Buffer.from(isCuidResponse).equals(Buffer.from([0x00, 0x00, 0x00, 0x00]))
-                    console.log("Card UID changeable:", cardInfo.isCuid)
+                    cardInfo.isCuid = Buffer.from(isCuidResponse).equals(Buffer.from([0x00, 0x00, 0x00, 0x00]));
+                    console.log("Card UID changeable:", cardInfo.isCuid);
 
                     cardInfo.firmwareVersion = (await transmit(reader, protocolReturned, GET_FIRMWARE_VERSION)).toString("hex");
                     console.log("Firmware Version:", cardInfo.firmwareVersion);
@@ -126,11 +102,13 @@ pcsc.on("reader", async (reader) => {
                     console.log("Reader Status:", cardInfo.readerStatus);
 
                     await readCardData(reader, protocolReturned);
+
+                    saveCardInfoToFile(cardInfo);
                 } catch (err) {
                     console.error("Error reading card info:", err);
                 } finally {
                     await disconnect(reader);
-                    console.log("----------")
+                    console.log("----------");
                     console.log("Card reading complete:", cardInfo);
                 }
             }
@@ -190,7 +168,8 @@ const transmit = async (reader, protocol, command) => {
 // keyN = key Number (0x00 || 0x01)
 const authenticate = async (reader, protocol, block, sector) => {
     for (let key of keys) {
-        for (let keyType of [0x60, 0x61]) { // 0x60 for Key A, 0x61 for Key B
+        for (let keyType of [0x60, 0x61]) {
+            // 0x60 for Key A, 0x61 for Key B
             let tryNextKey = false;
             const keyN = 0x00; // Usually 0x00
 
@@ -203,7 +182,7 @@ const authenticate = async (reader, protocol, block, sector) => {
                 if (tryNextKey) continue;
                 let bufRes2 = await transmit(reader, protocol, loadAuthKeysApduFormatFromReader10Bytes).catch((err) => (tryNextKey = true));
                 if (tryNextKey) continue;
-                console.log(`Authentication successful with key: ${key.toString("hex")} and key type: ${keyType === 0x60 ? 'A' : 'B'}`);
+                console.log(`Authentication successful with key: ${key.toString("hex")} and key type: ${keyType === 0x60 ? "A" : "B"}`);
                 return { key, keyType };
             } catch (err) {
                 // Continue to the next key
@@ -221,10 +200,21 @@ const readCardData = async (reader, protocol) => {
             await authenticate(reader, protocol, block);
             const command = READ_BLOCK(block);
             const data = await transmit(reader, protocol, command); // Response = (block: N Bytes + sw1,sw2: 2 Bytes)
-            cardInfo.sectors[`block${block}`] = data.toString("hex").slice(0, -4);
+            cardInfo.blocks[`${block}`] = data.toString("hex").slice(0, -4);
             console.log(`Block ${block} data:`, data.toString("hex").slice(0, -4));
         } catch (err) {
             console.error(`Error reading block ${block}:`, err.message);
         }
     }
+};
+
+const saveCardInfoToFile = (cardInfo) => {
+    const exportsDir = path.join(__dirname, "exports");
+    if (!fs.existsSync(exportsDir)) {
+        fs.mkdirSync(exportsDir);
+    }
+    const timestamp = new Date().toISOString();
+    const filename = path.join(exportsDir, `${timestamp}.json`);
+    fs.writeFileSync(filename, JSON.stringify(cardInfo, null, 2), "utf8");
+    console.log(`Card info saved to ${filename}`);
 };
