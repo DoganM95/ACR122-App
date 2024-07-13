@@ -40,7 +40,69 @@ let cardInfo = {
 let readerDevice;
 const keys = []; // Array in ram for speedy iteration
 
+const downloadedKeysDir = path.join(__dirname, "keys");
+if (!fs.existsSync(downloadedKeysDir)) {
+    fs.mkdirSync(downloadedKeysDir, { recursive: true });
+}
 
+(async () => {
+    const downloadKey = async (fileUrl, outputPath) => {
+        const writer = fs.createWriteStream(outputPath);
+        return await axios({
+            url: fileUrl,
+            method: "GET",
+            responseType: "stream",
+        }).then((response) => {
+            response.data.pipe(writer);
+            return new Promise((resolve, reject) => {
+                writer.on("finish", resolve);
+                writer.on("error", reject);
+            });
+        });
+    };
+    await axios
+        .get("https://api.github.com/repos/ikarus23/MifareClassicTool/contents/Mifare%20Classic%20Tool/app/src/main/assets/key-files?ref=master", {
+            headers: { Accept: "application/vnd.github.v3+json" },
+        })
+        .then((response) => {
+            const files = response.data;
+            return Promise.all(
+                files.map((file) => {
+                    const fileUrl = file.download_url;
+                    const filePath = path.join(downloadedKeysDir, file.name);
+                    console.log(`Downloading ${file.name}...`);
+                    return downloadKey(fileUrl, filePath).then(() => console.log(`${file.name} downloaded successfully.`));
+                }),
+            );
+        })
+        .then(() => console.log("All files downloaded successfully."))
+        .catch((error) => console.error("Error downloading files:", error));
+
+    const keysDir = path.join(__dirname, "keys/");
+    console.log("KeysDir: ", keysDir);
+
+    fs.readdirSync(keysDir).forEach((file) => {
+        console.log(file);
+        if (path.extname(file) === ".keys") {
+            const filePath = path.join(keysDir, file);
+            const fileKeys = fs.readFileSync(filePath, "utf8").split("\n");
+            fileKeys.forEach((line) => {
+                try {
+                    line = line.trim();
+                    if (line && !line.startsWith("#")) {
+                        const keyBuffer = Buffer.from(line, "hex");
+                        if (!keys.some((existingKey) => existingKey.equals(keyBuffer))) {
+                            keys.push(keyBuffer);
+                        }
+                    }
+                } catch (err) {
+                    console.error(`Failed to parse key: ${line} in file: ${file}`, err);
+                }
+            });
+        }
+    });
+    console.log("First item in keys array", keys[0]);
+})();
 
 pcsc.on("reader", async (reader) => {
     // readerDevice = reader;
