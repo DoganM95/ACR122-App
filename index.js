@@ -1,8 +1,9 @@
 const pcsclite = require("pcsclite"); // https://www.npmjs.com/package/pcsclite
 const fs = require("fs");
 const path = require("path");
-const atrMapping = require("./db.js"); // Import the atrMapping from db.js
 const pcsc = pcsclite();
+const atrMapping = require("./db.js"); // Import the atrMapping from db.js
+const axios = require("axios");
 
 console.log("Looking for a reader device...");
 
@@ -16,6 +17,7 @@ const GET_UID = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Returns UID + 2 
 const GET_UID_PDF = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x04]);
 const GET_ATS_PDF = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x04]);
 const GET_UID_CHANGEABILITY = Buffer.from([0x40, 0x00, 0x00, 0x00]);
+const RESET_READER = Buffer.from([0x62, 0x00, 0x00, 0x00]);
 
 const READ_BLOCK = (block) => Buffer.from([0xff, 0xb0, 0x00, block, 16]); // Command to read a block
 const READ_SECTOR = (sector) => Buffer.from([0xff, 0xb0, 0x00, sector * 4, 16]); // Command to read a whole sector
@@ -35,22 +37,14 @@ let cardInfo = {
     FileType: "mfcard",
 };
 
+let readerDevice;
 const keys = []; // Array in ram for speedy iteration
-const keysFilePath = path.join(__dirname, "keylist.keys");
-fs.readFileSync(keysFilePath, "utf8")
-    .split("\n")
-    .forEach((line) => {
-        try {
-            line = line.trim();
-            if (line && !line.startsWith("#")) {
-                keys.push(Buffer.from(line, "hex"));
-            }
-        } catch (err) {
-            console.error(`Failed to parse key: ${line}`, err);
-        }
-    });
+
+
 
 pcsc.on("reader", async (reader) => {
+    // readerDevice = reader;
+    // resetReader(reader);
     console.log("Reader detected:", reader.name);
 
     reader.on("error", (err) => {
@@ -166,7 +160,8 @@ const transmit = async (reader, protocol, command) => {
 // Auth key response: (SW1) (SW2) = 2 Bytes with (9000: success), (6300: error)
 // block = block number to be authenticated, keyT = key type used for auth (TYPE A = 60 || TYPE B = 61)
 // keyN = key Number (0x00 || 0x01)
-const authenticate = async (reader, protocol, block, sector) => {
+const authenticate = async (reader, protocol, block) => {
+    const sector = Math.floor(block / 4); // Calculate sector from block number
     for (let key of keys) {
         for (let keyType of [0x60, 0x61]) {
             // 0x60 for Key A, 0x61 for Key B
@@ -213,8 +208,21 @@ const saveCardInfoToFile = (cardInfo) => {
     if (!fs.existsSync(exportsDir)) {
         fs.mkdirSync(exportsDir);
     }
-    const timestamp = new Date().toISOString();
+    const timestamp = new Date().toISOString().replace(/:/g, "-");
     const filename = path.join(exportsDir, `${timestamp}.json`);
     fs.writeFileSync(filename, JSON.stringify(cardInfo, null, 2), "utf8");
     console.log(`Card info saved to ${filename}`);
+};
+
+const resetReader = (reader) => {
+    console.log("Resetting the reader...");
+    const controlCode = 0x310000; // ACR122U-specific control code for reset
+    const resetCommand = RESET_READER; // Reset command
+    reader.control(resetCommand, controlCode, 2, (err, response) => {
+        if (err) {
+            console.error("Error resetting the reader:", err.message);
+        } else {
+            console.log("Reader reset successfully:", response.toString("hex"));
+        }
+    });
 };
