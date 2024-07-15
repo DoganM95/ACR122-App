@@ -47,12 +47,6 @@ if (!fs.existsSync(downloadedKeysDir)) {
     fs.mkdirSync(downloadedKeysDir, { recursive: true });
 }
 
-const downloadKey = (fileUrl, outputPath) => {
-    const response = syncRequest("GET", fileUrl);
-    fs.writeFileSync(outputPath, response.getBody());
-    console.log(`${path.basename(outputPath)} downloaded successfully.`);
-};
-
 (async () => {
     try {
         const response = syncRequest("GET", "https://api.github.com/repos/ikarus23/MifareClassicTool/contents/Mifare%20Classic%20Tool/app/src/main/assets/key-files?ref=master", {
@@ -67,7 +61,9 @@ const downloadKey = (fileUrl, outputPath) => {
             const fileUrl = file.download_url;
             const filePath = path.join(downloadedKeysDir, file.name);
             console.log(`Downloading ${file.name}...`);
-            downloadKey(fileUrl, filePath);
+            const response = syncRequest("GET", fileUrl);
+            fs.writeFileSync(filePath, response.getBody());
+            console.log(`${path.basename(filePath)} downloaded successfully.`);
         });
 
         console.log("All files downloaded successfully.");
