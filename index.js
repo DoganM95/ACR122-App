@@ -47,56 +47,54 @@ if (!fs.existsSync(downloadedKeysDir)) {
     fs.mkdirSync(downloadedKeysDir, { recursive: true });
 }
 
-(async () => {
-    try {
-        const response = syncRequest("GET", "https://api.github.com/repos/ikarus23/MifareClassicTool/contents/Mifare%20Classic%20Tool/app/src/main/assets/key-files?ref=master", {
-            headers: {
-                Accept: "application/vnd.github.v3+json",
-                "User-Agent": "MyApp/1.0",
-            },
-        });
-        const files = JSON.parse(response.getBody());
+try {
+    const response = syncRequest("GET", "https://api.github.com/repos/ikarus23/MifareClassicTool/contents/Mifare%20Classic%20Tool/app/src/main/assets/key-files?ref=master", {
+        headers: {
+            Accept: "application/vnd.github.v3+json",
+            "User-Agent": "ACR122u-App/1.0",
+        },
+    });
+    const files = JSON.parse(response.getBody());
 
-        files.forEach((file) => {
-            const fileUrl = file.download_url;
-            const filePath = path.join(downloadedKeysDir, file.name);
-            console.log(`Downloading ${file.name}...`);
-            const response = syncRequest("GET", fileUrl);
-            fs.writeFileSync(filePath, response.getBody());
-            console.log(`${path.basename(filePath)} downloaded successfully.`);
-        });
+    files.forEach((file) => {
+        const fileUrl = file.download_url;
+        const filePath = path.join(downloadedKeysDir, file.name);
+        console.log(`Downloading ${file.name}...`);
+        const response = syncRequest("GET", fileUrl);
+        fs.writeFileSync(filePath, response.getBody());
+        console.log(`${path.basename(filePath)} downloaded successfully.`);
+    });
 
-        console.log("All files downloaded successfully.");
-        const keysDir = path.join(__dirname, "keys/");
-        console.log("KeysDir: ", keysDir);
+    console.log("All files downloaded successfully.");
+    const keysDir = path.join(__dirname, "keys/");
+    console.log("KeysDir: ", keysDir);
 
-        fs.readdirSync(keysDir).forEach((file) => {
-            console.log(file);
-            if (path.extname(file) === ".keys") {
-                const filePath = path.join(keysDir, file);
-                const fileKeys = fs.readFileSync(filePath, "utf8").split("\n");
-                fileKeys.forEach((line) => {
-                    try {
-                        line = line.trim();
-                        if (line && !line.startsWith("#")) {
-                            const keyBuffer = Buffer.from(line, "hex");
-                            if (!keys.some((existingKey) => existingKey.equals(keyBuffer))) {
-                                keys.push(keyBuffer);
-                            }
+    fs.readdirSync(keysDir).forEach((file) => {
+        console.log(file);
+        if (path.extname(file) === ".keys") {
+            const filePath = path.join(keysDir, file);
+            const fileKeys = fs.readFileSync(filePath, "utf8").split("\n");
+            fileKeys.forEach((line) => {
+                try {
+                    line = line.trim();
+                    if (line && !line.startsWith("#")) {
+                        const keyBuffer = Buffer.from(line, "hex");
+                        if (!keys.some((existingKey) => existingKey.equals(keyBuffer))) {
+                            keys.push(keyBuffer);
                         }
-                    } catch (err) {
-                        console.error(`Failed to parse key: ${line} in file: ${file}`, err);
                     }
-                });
-            }
-        });
-        console.log("First item in keys array", keys[0]);
-    } catch (error) {
-        console.error("Error initializing:", error);
-    } finally {
-        isDownloadFinished = true;
-    }
-})();
+                } catch (err) {
+                    console.error(`Failed to parse key: ${line} in file: ${file}`, err);
+                }
+            });
+        }
+    });
+    console.log("First item in keys array", keys[0]);
+} catch (error) {
+    console.error("Error initializing:", error);
+} finally {
+    isDownloadFinished = true;
+}
 
 // Initialize and then set up pcsc event listeners
 
