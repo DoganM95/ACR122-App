@@ -68,7 +68,6 @@ const downloadKeys = () => {
         const keysDir = path.join(__dirname, "keys/");
 
         fs.readdirSync(keysDir).forEach((file) => {
-            console.log(file);
             if (path.extname(file) === ".keys") {
                 const filePath = path.join(keysDir, file);
                 const fileKeys = fs.readFileSync(filePath, "utf8").split("\n");
@@ -87,7 +86,6 @@ const downloadKeys = () => {
                 });
             }
         });
-        console.log("First item in keys array", keys[0]);
     } catch (error) {
         console.error("Error initializing:", error);
     } finally {
