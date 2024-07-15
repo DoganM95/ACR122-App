@@ -151,6 +151,9 @@ pcsc.on("reader", async (reader) => {
                     await readCardData(reader, protocolReturned);
 
                     saveCardInfoToFile(cardInfo);
+
+                    // writeBlock(reader, protocolReturned, 0, "");
+                    // writeBlock0FromString(reader, protocolReturned, 0, "");
                 } catch (err) {
                     console.error("Error reading card info:", err);
                 } finally {
@@ -253,6 +256,33 @@ const readCardData = async (reader, protocol) => {
         } catch (err) {
             console.error(`Error reading block ${block}:`, err.message);
         }
+    }
+};
+
+const writeBlock = async (reader, protocol, block, data) => {
+    try {
+        await authenticate(reader, protocol, block);
+        const command = WRITE_BLOCK(block, data);
+        const response = await transmit(reader, protocol, command);
+        console.log(`Block ${block} written successfully with response:`, response.toString("hex"));
+    } catch (err) {
+        console.error(`Error writing block ${block}:`, err.message);
+    }
+};
+
+const writeBlock0FromString = async (reader, protocol, block, hexString) => {
+    const data = Buffer.from(hexString, "hex");
+    if (data.length !== 16) {
+        throw new Error("Block 0 data must be exactly 16 bytes.");
+    }
+
+    try {
+        await authenticate(reader, protocol, block);
+        const command = WRITE_BLOCK(block, data);
+        const response = await transmit(reader, protocol, command);
+        console.log(`Block 0 written successfully with response:`, response.toString("hex"));
+    } catch (err) {
+        console.error(`Error writing block 0:`, err.message);
     }
 };
 
