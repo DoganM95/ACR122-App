@@ -7,8 +7,6 @@ const atrMapping = require("./db.js");
 
 const pcsc = pcsclite();
 
-console.log("Looking for a reader device...");
-
 // Commands specific to ACR122U, with SW1,SW2 = (0900: success), (6300: error-operation-failed), (6A81: error-func-not-supported)
 const GET_ATR = Buffer.from([0xff, 0xca, 0x00, 0x00, 0x00]); // Response: {ATS} (SW1) (SW2)
 const GET_ATR_FULL_LENGTH = Buffer.from([0xff, 0xca, 0x01, 0x00, 0x00]); // Response: (UID-LSB) () () (UID MSB) (SW1) (SW2) = 6 Bytes
@@ -93,19 +91,14 @@ const downloadKeys = () => {
     } catch (error) {
         console.error("Error initializing:", error);
     } finally {
-        isDownloadFinished = true;
+        console.log("Looking for a reader device...");
     }
 };
 
 downloadKeys();
 
 // Initialize and then set up pcsc event listeners
-
 pcsc.on("reader", async (reader) => {
-    while (!isDownloadFinished) {
-        // Block
-    }
-
     readerDevice = reader;
     resetReader(reader);
     console.log("Reader detected:", reader.name);
