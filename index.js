@@ -98,7 +98,6 @@ downloadKeys();
 // Initialize and then set up pcsc event listeners
 pcsc.on("reader", async (reader) => {
     readerDevice = reader;
-    resetReader(reader);
     console.log("Reader detected:", reader.name);
 
     reader.on("error", (err) => {
