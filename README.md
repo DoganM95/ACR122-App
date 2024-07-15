@@ -53,6 +53,8 @@ docker run \
   --privileged \
   --pull always \
   --restart always \
+  -v "<exports_dir>:/usr/src/app/exports/" \
+  -v "<keys_dir>:/usr/src/app/keys/" \
   ghcr.io/doganm95/acr122u-js:latest
 ```
 
