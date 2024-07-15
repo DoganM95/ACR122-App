@@ -1,9 +1,11 @@
-const pcsclite = require("pcsclite"); // https://www.npmjs.com/package/pcsclite
+const pcsclite = require("pcsclite");
 const fs = require("fs");
 const path = require("path");
-const pcsc = pcsclite();
-const atrMapping = require("./db.js"); // Import the atrMapping from db.js
 const axios = require("axios");
+const syncRequest = require("sync-request");
+const atrMapping = require("./db.js");
+
+const pcsc = pcsclite();
 
 console.log("Looking for a reader device...");
 
@@ -45,68 +47,70 @@ if (!fs.existsSync(downloadedKeysDir)) {
     fs.mkdirSync(downloadedKeysDir, { recursive: true });
 }
 
+const downloadKey = (fileUrl, outputPath) => {
+    const response = syncRequest("GET", fileUrl);
+    fs.writeFileSync(outputPath, response.getBody());
+    console.log(`${path.basename(outputPath)} downloaded successfully.`);
+};
+
 (async () => {
-    const downloadKey = async (fileUrl, outputPath) => {
-        const writer = fs.createWriteStream(outputPath);
-        return await axios({
-            url: fileUrl,
-            method: "GET",
-            responseType: "stream",
-        }).then((response) => {
-            response.data.pipe(writer);
-            return new Promise((resolve, reject) => {
-                writer.on("finish", resolve);
-                writer.on("error", reject);
-            });
+    try {
+        const response = syncRequest("GET", "https://api.github.com/repos/ikarus23/MifareClassicTool/contents/Mifare%20Classic%20Tool/app/src/main/assets/key-files?ref=master", {
+            headers: {
+                Accept: "application/vnd.github.v3+json",
+                "User-Agent": "MyApp/1.0",
+            },
         });
-    };
-    await axios
-        .get("https://api.github.com/repos/ikarus23/MifareClassicTool/contents/Mifare%20Classic%20Tool/app/src/main/assets/key-files?ref=master", {
-            headers: { Accept: "application/vnd.github.v3+json" },
-        })
-        .then((response) => {
-            const files = response.data;
-            return Promise.all(
-                files.map((file) => {
-                    const fileUrl = file.download_url;
-                    const filePath = path.join(downloadedKeysDir, file.name);
-                    console.log(`Downloading ${file.name}...`);
-                    return downloadKey(fileUrl, filePath).then(() => console.log(`${file.name} downloaded successfully.`));
-                }),
-            );
-        })
-        .then(() => console.log("All files downloaded successfully."))
-        .catch((error) => console.error("Error downloading files:", error));
+        const files = JSON.parse(response.getBody());
 
-    const keysDir = path.join(__dirname, "keys/");
-    console.log("KeysDir: ", keysDir);
+        files.forEach((file) => {
+            const fileUrl = file.download_url;
+            const filePath = path.join(downloadedKeysDir, file.name);
+            console.log(`Downloading ${file.name}...`);
+            downloadKey(fileUrl, filePath);
+        });
 
-    fs.readdirSync(keysDir).forEach((file) => {
-        console.log(file);
-        if (path.extname(file) === ".keys") {
-            const filePath = path.join(keysDir, file);
-            const fileKeys = fs.readFileSync(filePath, "utf8").split("\n");
-            fileKeys.forEach((line) => {
-                try {
-                    line = line.trim();
-                    if (line && !line.startsWith("#")) {
-                        const keyBuffer = Buffer.from(line, "hex");
-                        if (!keys.some((existingKey) => existingKey.equals(keyBuffer))) {
-                            keys.push(keyBuffer);
+        console.log("All files downloaded successfully.");
+        const keysDir = path.join(__dirname, "keys/");
+        console.log("KeysDir: ", keysDir);
+
+        fs.readdirSync(keysDir).forEach((file) => {
+            console.log(file);
+            if (path.extname(file) === ".keys") {
+                const filePath = path.join(keysDir, file);
+                const fileKeys = fs.readFileSync(filePath, "utf8").split("\n");
+                fileKeys.forEach((line) => {
+                    try {
+                        line = line.trim();
+                        if (line && !line.startsWith("#")) {
+                            const keyBuffer = Buffer.from(line, "hex");
+                            if (!keys.some((existingKey) => existingKey.equals(keyBuffer))) {
+                                keys.push(keyBuffer);
+                            }
                         }
+                    } catch (err) {
+                        console.error(`Failed to parse key: ${line} in file: ${file}`, err);
                     }
-                } catch (err) {
-                    console.error(`Failed to parse key: ${line} in file: ${file}`, err);
-                }
-            });
-        }
-    });
-    console.log("First item in keys array", keys[0]);
+                });
+            }
+        });
+        console.log("First item in keys array", keys[0]);
+    } catch (error) {
+        console.error("Error initializing:", error);
+    } finally {
+        isDownloadFinished = true;
+    }
 })();
 
+// Initialize and then set up pcsc event listeners
+
 pcsc.on("reader", async (reader) => {
-    // readerDevice = reader;
-    // resetReader(reader);
+    while (!isDownloadFinished) {
+        // Block
+    }
+
+    readerDevice = reader;
+    resetReader(reader);
     console.log("Reader detected:", reader.name);
 
     reader.on("error", (err) => {
@@ -278,9 +282,9 @@ const saveCardInfoToFile = (cardInfo) => {
 
 const resetReader = (reader) => {
     console.log("Resetting the reader...");
-    const controlCode = 0x310000; // ACR122U-specific control code for reset
+    const resetReaderControlCode = 0x310000; // ACR122U-specific control code for reset
     const resetCommand = RESET_READER; // Reset command
-    reader.control(resetCommand, controlCode, 2, (err, response) => {
+    reader.control(resetCommand, resetReaderControlCode, 2, (err, response) => {
         if (err) {
             console.error("Error resetting the reader:", err.message);
         } else {
